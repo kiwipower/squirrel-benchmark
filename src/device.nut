@@ -16,6 +16,7 @@ class PerformanceTests
         output += loopVsCachedLoop(); collectgarbage();
         output += foreachVsForVsWhileLoop(); collectgarbage();
         output += classVsStaticClass(); collectgarbage();
+        output += bracketsVsNoBrackets(); collectgarbage();
 
         server.log( output.slice( 0, output.len() / 2 ) );
         server.log( output.slice( output.len() / 2, output.len() ) );
@@ -522,6 +523,59 @@ class PerformanceTests
             [ "Using a static class", time4 - time3 ]
         ]);
     }
+
+    /// Tests to see if it's faster to:
+    /// A. Use brackets after a statement.
+    /// B. Use no brackets after a statement.
+    function bracketsVsNoBrackets()
+    {
+        local someVariable = 0;
+
+        local time1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+           if( true ) { ++someVariable; }
+        }
+        local time2 = hardware.micros();
+
+        someVariable = 0;
+
+        local time3 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            if( true ) ++someVariable;
+        }
+        local time4 = hardware.micros();
+
+        someVariable = 0;
+
+        local time5 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            if( false ) { ++someVariable; }
+            else { ++someVariable; }
+        }
+        local time6 = hardware.micros();
+
+        someVariable = 0;
+
+        local time7 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            if( false ) ++someVariable;
+            else ++someVariable;
+        }
+        local time8 = hardware.micros();
+
+        return _printResults( "Brackets vs No Brackets (x100,000)",
+        [
+            [ "Using brackets after an if statement", time2 - time1 ],
+            [ "Using no brackets after an if statement", time4 - time3 ],
+            [ "Using brackets after an if/else statement", time6 - time5 ],
+            [ "Using no brackets after an if/else statement", time8 - time7 ]
+        ]);
+    }
+
 /*
     /// Tests to see if it's faster to:
     /// A. Lookup an interface as a string from shared a global class.
