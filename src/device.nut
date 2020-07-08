@@ -13,6 +13,7 @@ class PerformanceTests
         output += ifVsRegexpTypeof(); collectgarbage();
         output += switchStatementVsTableLookup(); collectgarbage();
         output += tryVsIn(); collectgarbage();
+        output += noKeyVsDelegateMetamethod(); collectgarbage();
         output += loopVsCachedLoop(); collectgarbage();
         output += foreachVsForVsWhileLoop(); collectgarbage();
         output += classVsStaticClass(); collectgarbage();
@@ -418,6 +419,44 @@ class PerformanceTests
             [ "Using Try when key doesn't exist", time4 - time3 ],
             [ "Using In when key exists", time6 - time5 ],
             [ "Using In when key doesn't exist", time8 - time7 ]
+        ]);
+    }
+
+    /// Tests to see if it's faster to:
+    /// A. Check for key presence in a table.
+    /// B. Access the key using a delegate metamethod.
+    function noKeyVsDelegateMetamethod()
+    {
+        local testTable     = {};
+        local delegateTable =
+        {
+            _get = function( key )
+            {
+                return {};
+            }
+        }
+        testTable.setdelegate( delegateTable );
+
+        local someVariable = 0;
+
+        local time1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+           if( "testKey" in testTable ) {}
+        }
+        local time2 = hardware.micros();
+
+        local time3 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            testTable["testKey"];
+        }
+        local time4 = hardware.micros();
+
+        return _printResults( "No Table Key vs Table Delegate Metamethod (x100,000)",
+        [
+            [ "Checking for key presence", time2 - time1 ],
+            [ "Accessing the key using a delegate metamethod", time4 - time3 ]
         ]);
     }
 
