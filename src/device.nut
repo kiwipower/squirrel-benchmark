@@ -14,6 +14,7 @@ class PerformanceTests
         output += switchStatementVsTableLookup(); collectgarbage();
         output += tryVsIn(); collectgarbage();
         output += noKeyVsDelegateMetamethod(); collectgarbage();
+        output += localVsTwoTableLookup(); collectgarbage();
         output += loopVsCachedLoop(); collectgarbage();
         output += foreachVsForVsWhileLoop(); collectgarbage();
         output += classVsStaticClass(); collectgarbage();
@@ -457,6 +458,37 @@ class PerformanceTests
         [
             [ "Checking for key presence", time2 - time1 ],
             [ "Accessing the key using a delegate metamethod", time4 - time3 ]
+        ]);
+    }
+
+    /// Tests to see if it's faster to:
+    /// A. Use a local to cache table variable lookups for two+ lookups.
+    /// B. Lookup the table variable directly twice.
+    function localVsTwoTableLookup()
+    {
+        local testTable = { testKey = 100000 };
+
+        local time1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            local cachedTestKey = testTable.testKey;
+            cachedTestKey;
+            cachedTestKey;
+        }
+        local time2 = hardware.micros();
+
+        local time3 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            testTable.testKey;
+            testTable.testKey;
+        }
+        local time4 = hardware.micros();
+
+        return _printResults( "Local vs Two Table Lookup (x100,000)",
+        [
+            [ "Using local", time2 - time1 ],
+            [ "Using direct lookup", time4 - time3 ]
         ]);
     }
 
