@@ -509,10 +509,24 @@ class PerformanceTests
         for( local i = 0; i < testKey; ++i );
         local time4 = hardware.micros();
 
+        local testTable2 = { testKey = array(100) };
+
+        local time5 = hardware.micros();
+        foreach( index, value in testTable2.testKey );
+        local time6 = hardware.micros();
+
+        local testKey2 = testTable2.testKey;
+
+        local time7 = hardware.micros();
+        foreach( index, value in testKey2 );
+        local time8 = hardware.micros();
+
         return _printResults( "Empty Loop vs Empty Cached Loop (x100,000)",
         [
             [ "Using uncached loop", time2 - time1 ],
-            [ "Using cached loop", time4 - time3 ]
+            [ "Using cached loop", time4 - time3 ],
+            [ "Using uncached foreach loop", time6 - time5 ],
+            [ "Using cached foreach loop", time8 - time7 ]
         ]);
     }
 
