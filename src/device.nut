@@ -6,6 +6,7 @@ class PerformanceTests
         local output = "Running Performance Tests\n";
              output += "=========================\n";
 
+        output += nullVsImpliedComparison(); collectgarbage();
         output += newSlotVsSet(); collectgarbage();
         output += cloneVsNewArray(); collectgarbage();
         output += appendArrayVsSetPreallocatedArray(); collectgarbage();
@@ -22,6 +23,50 @@ class PerformanceTests
 
         server.log( output.slice( 0, output.len() / 2 ) );
         server.log( output.slice( output.len() / 2, output.len() ) );
+    }
+
+    /// Tests to see if it's faster to:
+    /// A. Compare a value to null via '== null'
+    /// B. Inspect the value directly for its truthyness
+    function nullVsImpliedComparison()
+    {
+        local myValue = null;
+
+        local time1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            if( myValue == null );
+        }
+        local time2 = hardware.micros();
+
+        local time3 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            if( myValue );
+        }
+        local time4 = hardware.micros();
+
+        local time5 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            if( myValue != null );
+        }
+        local time6 = hardware.micros();
+
+        local time7 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            if( !myValue );
+        }
+        local time8 = hardware.micros();
+
+        return _printResults( "Null Comparison vs Direct Truthy Comparison (x100,000)",
+        [
+            [ "Null equals comparison", time2 - time1 ],
+            [ "Direct truthy comparison", time4 - time3 ],
+            [ "Null not equals comparison", time6 - time5 ],
+            [ "Direct falsey comparison", time8 - time7 ]
+        ]);
     }
 
     /// Tests to see if it's faster to:
@@ -80,23 +125,23 @@ class PerformanceTests
         local myArray = [0, "test"];
         local newArray;
 
-        local time1 = hardware.millis();
+        local time1 = hardware.micros();
         for( local i = 0; i < 100000; ++i )
         {
             newArray = [myArray[0], myArray[1]];
         }
-        local time2 = hardware.millis();
+        local time2 = hardware.micros();
 
         newArray = null;
         collectgarbage();
         newArray = [];
 
-        local time3 = hardware.millis();
+        local time3 = hardware.micros();
         for( local i = 0; i < 100000; ++i )
         {
             newArray = clone myArray;
         }
-        local time4 = hardware.millis();
+        local time4 = hardware.micros();
 
         return _printResults( "Clone vs NewArray (x100,000)",
         [
@@ -112,24 +157,24 @@ class PerformanceTests
     /// becomes much negligible for smaller arrays
     function appendArrayVsSetPreallocatedArray()
     {
-        local time1 = hardware.millis();
+        local time1 = hardware.micros();
         local newArray = [];
         for( local i = 0; i < 50000; ++i )
         {
             newArray.append( 100 );
         }
-        local time2 = hardware.millis();
+        local time2 = hardware.micros();
 
         newArray = null;
         collectgarbage();
 
-        local time3 = hardware.millis();
+        local time3 = hardware.micros();
         newArray = array( 50000 );
         for( local i = 0; i < 50000; ++i )
         {
             newArray[i] = 100;
         }
-        local time4 = hardware.millis();
+        local time4 = hardware.micros();
 
         return _printResults( "Append Array vs Set Preallocated Array (x50,000)",
         [
@@ -146,23 +191,23 @@ class PerformanceTests
     {
         local newArray = [];
 
-        local time1 = hardware.millis();
+        local time1 = hardware.micros();
         for( local i = 0; i < 100000; ++i )
         {
             newArray.append( 100 );
         }
-        local time2 = hardware.millis();
+        local time2 = hardware.micros();
 
         newArray = null;
         collectgarbage();
         newArray = [];
 
-        local time3 = hardware.millis();
+        local time3 = hardware.micros();
         for( local i = 0; i < 100000; ++i )
         {
             newArray.push( 100 );
         }
-        local time4 = hardware.millis();
+        local time4 = hardware.micros();
 
         return _printResults( "Array Append vs Array Push (x100,000)",
         [
@@ -180,31 +225,31 @@ class PerformanceTests
     {
         local myTable = { myVar = 0 };
 
-        local time1 = hardware.millis();
+        local time1 = hardware.micros();
         for( local i = 0; i < 100000; ++i )
         {
             if( typeof(myTable) != "integer" && typeof(myTable) != "float" && typeof(myTable) != "string" && typeof(myTable) != "bool" && typeof(myTable) != "null" )
             {}
         }
-        local time2 = hardware.millis();
+        local time2 = hardware.micros();
 
-        local time3 = hardware.millis();
+        local time3 = hardware.micros();
         for( local i = 0; i < 100000; ++i )
         {
             local myTableType = typeof(myTable);
             if( myTableType != "integer" && myTableType != "float" && myTableType != "string" && myTableType != "bool" && myTableType != "null" )
             {}
         }
-        local time4 = hardware.millis();
+        local time4 = hardware.micros();
         
         local isBaseType = regexp( @"integer|float|string|bool|null" );
         
-        local time5 = hardware.millis();
+        local time5 = hardware.micros();
         for( local i = 0; i < 100000; ++i )
         {
            if( isBaseType.match( typeof(myTable) ) ) {}
         }
-        local time6 = hardware.millis();
+        local time6 = hardware.micros();
 
         return _printResults( "If vs Regexp for 5x Typeof comparisions (x100,000)",
         [
@@ -298,6 +343,7 @@ class PerformanceTests
  
         local switchLookup = function( values )
         {
+            local result;
             local time1 = hardware.micros();
             for( local i = 0; i < 10000; ++i )
             {
