@@ -3,26 +3,31 @@ class PerformanceTests
 {
     function run()
     {
-        local output = "Running Performance Tests\n";
-             output += "=========================\n";
+        local output1 = "", output2 = "", output3 = "";
+        output1  = "Running Performance Tests\n";
+        output1 += "=========================\n";
+        
+        output1 += nullVsImpliedComparison(); collectgarbage();
+        output1 += newSlotVsSet(); collectgarbage();
+        output1 += cloneVsNewArray(); collectgarbage();
+        output1 += appendArrayVsSetPreallocatedArray(); collectgarbage();
+        output1 += arrayAppendVsArrayPush(); collectgarbage();
+        output2 += ifVsRegexpTypeof(); collectgarbage();
+        output2 += switchStatementVsTableLookup(); collectgarbage();
+        output2 += tryVsIn(); collectgarbage();
+        output2 += noKeyVsDelegateMetamethod(); collectgarbage();
+        output2 += localVsTwoTableLookup(); collectgarbage();
+        output2 += loopVsCachedLoop(); collectgarbage();
+        output3 += foreachVsForVsWhileLoop(); collectgarbage();
+        output3 += classVsStaticClass(); collectgarbage();
+        output3 += bracketsVsNoBrackets(); collectgarbage();
+        output3 += LookupVsTypeCheckComparison(); collectgarbage();
+        output3 += regexpVsStringFind(); collectgarbage();
+        output3 += singleVsMultipleClosures(); collectgarbage();
 
-        output += nullVsImpliedComparison(); collectgarbage();
-        output += newSlotVsSet(); collectgarbage();
-        output += cloneVsNewArray(); collectgarbage();
-        output += appendArrayVsSetPreallocatedArray(); collectgarbage();
-        output += arrayAppendVsArrayPush(); collectgarbage();
-        output += ifVsRegexpTypeof(); collectgarbage();
-        output += switchStatementVsTableLookup(); collectgarbage();
-        output += tryVsIn(); collectgarbage();
-        output += noKeyVsDelegateMetamethod(); collectgarbage();
-        output += localVsTwoTableLookup(); collectgarbage();
-        output += loopVsCachedLoop(); collectgarbage();
-        output += foreachVsForVsWhileLoop(); collectgarbage();
-        output += classVsStaticClass(); collectgarbage();
-        output += bracketsVsNoBrackets(); collectgarbage();
-
-        server.log( output.slice( 0, output.len() / 2 ) );
-        server.log( output.slice( output.len() / 2, output.len() ) );
+        server.log( output1 );
+        server.log( output2 );
+        server.log( output3 );
     }
 
     /// Tests to see if it's faster to:
@@ -60,12 +65,17 @@ class PerformanceTests
         }
         local time8 = hardware.micros();
 
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
         return _printResults( "Null Comparison vs Direct Truthy Comparison (x100,000)",
         [
-            [ "Null equals comparison", time2 - time1 ],
-            [ "Direct truthy comparison", time4 - time3 ],
-            [ "Null not equals comparison", time6 - time5 ],
-            [ "Direct falsey comparison", time8 - time7 ]
+            [ "Null equals comparison", time2 - time1 - controlTime ],
+            [ "Direct truthy comparison", time4 - time3 - controlTime ],
+            [ "Null not equals comparison", time6 - time5 - controlTime ],
+            [ "Direct falsey comparison", time8 - time7 - controlTime ]
         ]);
     }
 
@@ -107,12 +117,17 @@ class PerformanceTests
         }
         local time8 = hardware.micros();
 
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
         return _printResults( "NewSlot vs Set vs Rawset (x100,000)",
         [
-            [ "Using Set only", time2 - time1 ],
-            [ "Using NewSlot only", time4 - time3 ],
-            [ "Using Rawset only", time6 - time5 ],
-            [ "If statement to determine NewSlot vs Set", time8 - time7 ]
+            [ "Using Set only", time2 - time1 - controlTime ],
+            [ "Using NewSlot only", time4 - time3 - controlTime ],
+            [ "Using Rawset only", time6 - time5 - controlTime ],
+            [ "If statement to determine NewSlot vs Set", time8 - time7 - controlTime ]
         ]);
     }
 
@@ -143,10 +158,15 @@ class PerformanceTests
         }
         local time4 = hardware.micros();
 
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
         return _printResults( "Clone vs NewArray (x100,000)",
         [
-            [ "Using NewArray", time2 - time1 ],
-            [ "Using Clone", time4 - time3 ]
+            [ "Using NewArray", time2 - time1 - controlTime ],
+            [ "Using Clone", time4 - time3 - controlTime ]
         ]);
     }
 
@@ -176,10 +196,15 @@ class PerformanceTests
         }
         local time4 = hardware.micros();
 
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 50000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
         return _printResults( "Append Array vs Set Preallocated Array (x50,000)",
         [
-            [ "Using Append", time2 - time1 ],
-            [ "Using Preallocated Set", time4 - time3 ]
+            [ "Using Append", time2 - time1 - controlTime ],
+            [ "Using Preallocated Set", time4 - time3 - controlTime ]
         ]);
     }
 
@@ -209,10 +234,15 @@ class PerformanceTests
         }
         local time4 = hardware.micros();
 
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
         return _printResults( "Array Append vs Array Push (x100,000)",
         [
-            [ "Using Append", time2 - time1 ],
-            [ "Using Push", time4 - time3 ]
+            [ "Using Append", time2 - time1 - controlTime ],
+            [ "Using Push", time4 - time3 - controlTime ]
         ]);
     }
 
@@ -251,11 +281,16 @@ class PerformanceTests
         }
         local time6 = hardware.micros();
 
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
         return _printResults( "If vs Regexp for 5x Typeof comparisions (x100,000)",
         [
-            [ "Using if comparison", time2 - time1 ],
-            [ "Using cached if comparison", time4 - time3 ],
-            [ "Using regexp", time6 - time5 ]
+            [ "Using if comparison", time2 - time1 - controlTime ],
+            [ "Using cached if comparison", time4 - time3 - controlTime ],
+            [ "Using regexp", time6 - time5 - controlTime ]
         ]);
     }
 
@@ -404,20 +439,25 @@ class PerformanceTests
         local result11 = tableSparseLookup( valuesSparse );
         local result12 = arraySparseLookup( valuesSparse );
 
-        return _printResults( "Switch Statement vs Table Lookup vs Array Lookup (x30,000)",
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 10000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
+        return _printResults( "Switch Statement vs Table Lookup vs Array Lookup (x10,000)",
         [
-            [ "Switch Lookup (even)", result1 ],
-            [ "Switch Lookup (bottom)", result2 ],
-            [ "Switch Lookup (top)", result3 ],
-            [ "Table Lookup (even)", result4 ],
-            [ "Table Lookup (bottom)", result5 ],
-            [ "Table Lookup (top)", result6 ],
-            [ "Array Lookup (even)", result7 ],
-            [ "Array Lookup (bottom)", result8 ],
-            [ "Array Lookup (top)", result9 ],
-            [ "Switch Sparse Lookup", result10 ],
-            [ "Table Sparse Lookup", result11 ],
-            [ "Array Sparse Lookup", result12 ],
+            [ "Switch Lookup (even)", result1 - controlTime  ],
+            [ "Switch Lookup (bottom)", result2 - controlTime ],
+            [ "Switch Lookup (top)", result3 - controlTime ],
+            [ "Table Lookup (even)", result4 - controlTime ],
+            [ "Table Lookup (bottom)", result5 - controlTime ],
+            [ "Table Lookup (top)", result6 - controlTime ],
+            [ "Array Lookup (even)", result7 - controlTime ],
+            [ "Array Lookup (bottom)", result8 - controlTime ],
+            [ "Array Lookup (top)", result9 - controlTime ],
+            [ "Switch Sparse Lookup", result10 - controlTime ],
+            [ "Table Sparse Lookup", result11 - controlTime ],
+            [ "Array Sparse Lookup", result12 - controlTime ],
         ]);
     }
 
@@ -460,12 +500,17 @@ class PerformanceTests
         }
         local time8 = hardware.micros();
 
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
         return _printResults( "Try vs In (x100,000)",
         [
-            [ "Using Try when key exists", time2 - time1 ],
-            [ "Using Try when key doesn't exist", time4 - time3 ],
-            [ "Using In when key exists", time6 - time5 ],
-            [ "Using In when key doesn't exist", time8 - time7 ]
+            [ "Using Try when key exists", time2 - time1 - controlTime ],
+            [ "Using Try when key doesn't exist", time4 - time3 - controlTime ],
+            [ "Using In when key exists", time6 - time5 - controlTime ],
+            [ "Using In when key doesn't exist", time8 - time7 - controlTime ]
         ]);
     }
 
@@ -500,10 +545,15 @@ class PerformanceTests
         }
         local time4 = hardware.micros();
 
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
         return _printResults( "No Table Key vs Table Delegate Metamethod (x100,000)",
         [
-            [ "Checking for key presence", time2 - time1 ],
-            [ "Accessing the key using a delegate metamethod", time4 - time3 ]
+            [ "Checking for key presence", time2 - time1 - controlTime ],
+            [ "Accessing the key using a delegate metamethod", time4 - time3 - controlTime ]
         ]);
     }
 
@@ -531,10 +581,15 @@ class PerformanceTests
         }
         local time4 = hardware.micros();
 
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
         return _printResults( "Local vs Two Table Lookup (x100,000)",
         [
-            [ "Using local", time2 - time1 ],
-            [ "Using direct lookup", time4 - time3 ]
+            [ "Using local", time2 - time1 - controlTime ],
+            [ "Using direct lookup", time4 - time3 - controlTime ]
         ]);
     }
 
@@ -543,7 +598,7 @@ class PerformanceTests
     /// B. Use a loop comparing against a cached table key.
     function loopVsCachedLoop()
     {
-        local testTable = { testKey = 100000 };
+        local testTable = { testKey = 50000 };
 
         local time1 = hardware.micros();
         for( local i = 0; i < testTable.testKey; ++i );
@@ -555,7 +610,7 @@ class PerformanceTests
         for( local i = 0; i < testKey; ++i );
         local time4 = hardware.micros();
 
-        local testTable2 = { testKey = array(100) };
+        local testTable2 = { testKey = array(50000) };
 
         local time5 = hardware.micros();
         foreach( index, value in testTable2.testKey );
@@ -567,7 +622,7 @@ class PerformanceTests
         foreach( index, value in testKey2 );
         local time8 = hardware.micros();
 
-        return _printResults( "Empty Loop vs Empty Cached Loop (x100,000)",
+        return _printResults( "Empty Loop vs Empty Cached Loop (x50,000)",
         [
             [ "Using uncached loop", time2 - time1 ],
             [ "Using cached loop", time4 - time3 ],
@@ -648,10 +703,15 @@ class PerformanceTests
         }
         local time4 = hardware.micros();
 
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
         return _printResults( "Class vs Static Class (x100,000)",
         [
-            [ "Using a class instance", time2 - time1 ],
-            [ "Using a static class", time4 - time3 ]
+            [ "Using a class instance", time2 - time1 - controlTime ],
+            [ "Using a static class", time4 - time3 - controlTime ]
         ]);
     }
 
@@ -698,12 +758,182 @@ class PerformanceTests
         }
         local time8 = hardware.micros();
 
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
         return _printResults( "Brackets vs No Brackets (x100,000)",
         [
-            [ "Using brackets after an if statement", time2 - time1 ],
-            [ "Using no brackets after an if statement", time4 - time3 ],
-            [ "Using brackets after an if/else statement", time6 - time5 ],
-            [ "Using no brackets after an if/else statement", time8 - time7 ]
+            [ "Using brackets after an if statement", time2 - time1 - controlTime ],
+            [ "Using no brackets after an if statement", time4 - time3 - controlTime ],
+            [ "Using brackets after an if/else statement", time6 - time5 - controlTime ],
+            [ "Using no brackets after an if/else statement", time8 - time7 - controlTime ]
+        ]);
+    }
+
+    /// Tests to see if it's faster to:
+    /// A. Search for a value in two tables, when the value is in the second table
+    /// B. Search for a value in one table then extract and verify the type from an array
+    /// C. Search for the value in one table then extract and verify its type from the same table
+    function LookupVsTypeCheckComparison()
+    {
+        local testTable1 =
+        {
+            testValue1 = ["integer",1],
+            testValue2 = ["integer",2],
+            testValue3 = ["integer",3],
+            testValue4 = ["integer",4],
+            testValue5 = ["integer",5],
+            testValue6 = ["integer",6],
+            testValue7 = ["integer",7]
+        };
+
+        local testTable2 =
+        {
+            testValue8  = ["integer",8],
+            testValue9  = ["integer",9],
+            testValue10 = ["integer",10],
+            testValue11 = ["integer",11],
+            testValue12 = ["integer",12],
+            testValue13 = ["integer",13],
+            testValue14 = ["integer",14]
+        };
+
+        testTable2["*type*testValue11"] <- "integer";
+
+        local searchValue = "testValue11";
+
+        local time1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            if( searchValue in testTable1 ) {}
+
+            if( searchValue in testTable2 )
+            {
+                local retrievedValue = testTable2[searchValue];
+            }
+        }
+        local time2 = hardware.micros();
+
+        local time3 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            if( searchValue in testTable2 )
+            {
+                local retrievedValue = testTable2[searchValue];
+                if( typeof(retrievedValue[0]) == "integer" )
+                {
+                    retrievedValue[1];
+                }
+            }
+        }
+        local time4 = hardware.micros();
+
+        local time5 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            if( searchValue in testTable2 )
+            {
+                local retrievedValue = testTable2[searchValue];
+                
+                if( "*type*" + testTable2[searchValue] == "integer" )
+                {
+                }
+            }
+        }
+        local time6 = hardware.micros();
+
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
+        return _printResults( "Lookup Separate Tables Comparison vs Lookup then Type Check Comparison (x100,000)",
+        [
+            [ "Value in two tables, when the value is in the second table comparison", time2 - time1 - controlTime ],
+            [ "Value in one table then extract and verify the type from an array comparison", time4 - time3 - controlTime ],
+            [ "Value in one table then extract and verify its type from the same table comparison", time6 - time5 - controlTime ]
+        ]);
+    }
+
+    /// Tests to see if it's faster to:
+    /// A. Search for a match at the strat of a string with a regexp
+    /// B. Search for a match at the strat of a string with a simple regexp
+    /// B. Search for a match at the strat of a string with a string find
+    function regexpVsStringFind()
+    {
+        local myRegexp  = regexp( @"^__\w+" );
+        local mySimpleRegexp  = regexp( @"^__.+" );
+        local myValue   = "__";
+
+        local testVariable  = "__hiThereImATest";
+        local testVariable2 = "_hiThereImAFailedTest";
+
+        local time1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            if( myRegexp.match(testVariable) );
+            if( myRegexp.match(testVariable2) );
+        }
+        local time2 = hardware.micros();
+
+        local time3 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            if( mySimpleRegexp.match(testVariable) );
+            if( mySimpleRegexp.match(testVariable2) );
+        }
+        local time4 = hardware.micros();
+
+        local time5 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            if( testVariable.find("__") == 0 );
+            if( testVariable2.find("__") == 0 );
+        }
+        local time6 = hardware.micros();
+
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
+        return _printResults( "Regexp vs String find Comparison (x100,000)",
+        [
+            [ "Regexp comparison", time2 - time1 - controlTime ],
+            [ "Simple regexp comparison", time4 - time3 - controlTime ],
+            [ "String find comparison", time6 - time5 - controlTime ]
+        ]);
+    }
+
+    /// Tests to see if it's faster to:
+    /// A. Create and reuse a single closure
+    /// B. Create multiple identical closures
+    function singleVsMultipleClosures()
+    {
+        local testData = 0;
+
+        local time1 = hardware.micros();
+        local testClosure = function() { local captureSomething = testData; return captureSomething; }.bindenv(this);
+        local time2 = hardware.micros();
+
+        local time3 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            local testClosure = function() { local captureSomething = testData; return captureSomething; }.bindenv(this);
+        }
+        local time4 = hardware.micros();
+
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
+        return _printResults( "Regexp vs String find Comparison (x100,000)",
+        [
+            [ "Single closure", time2 - time1 ],
+            [ "Multiple closures", time4 - time3 - controlTime ]
         ]);
     }
 
