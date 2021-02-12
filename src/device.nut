@@ -3,10 +3,11 @@ class PerformanceTests
 {
     function run()
     {
-        local output1 = "", output2 = "", output3 = "";
+        local output1 = "", output2 = "", output3 = "", output4 = "";
         output1  = "Running Performance Tests\n";
         output1 += "=========================\n";
         
+        output1 += localsInsideVsOutsideLoopComparison(); collectgarbage();
         output1 += nullVsImpliedComparison(); collectgarbage();
         output1 += newSlotVsSet(); collectgarbage();
         output1 += cloneVsNewArray(); collectgarbage();
@@ -24,10 +25,51 @@ class PerformanceTests
         output3 += LookupVsTypeCheckComparison(); collectgarbage();
         output3 += regexpVsStringFind(); collectgarbage();
         output3 += singleVsMultipleClosures(); collectgarbage();
+        output3 += ifVsifElseComparison(); collectgarbage();
+        output4 += cachedParametersComparison(); collectgarbage();
 
         server.log( output1 );
         server.log( output2 );
         server.log( output3 );
+        server.log( output4 );
+    }
+
+    /// Tests to see if it's faster to:
+    /// A. Cache locals inside a loop
+    /// B. Cache locals outnside a loop
+    function localsInsideVsOutsideLoopComparison()
+    {
+        local time1 = hardware.micros();
+        for( local i = 0; i < 1000000; ++i )
+        {
+            local testLocal1 = 0;
+            local testLocal2 = 0;
+            local testLocal3 = 0;
+        }
+        local time2 = hardware.micros();
+
+        local time3 = hardware.micros();
+        local testLocal1;
+        local testLocal2;
+        local testLocal3;
+        for( local i = 0; i < 1000000; ++i )
+        {
+            testLocal1 = 0;
+            testLocal2 = 0;
+            testLocal3 = 0;
+        }
+        local time4 = hardware.micros();
+
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 1000000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
+        return _printResults( "Local inside vs outside loop Comparison (x1,000,000)",
+        [
+            [ "Cached inside loop", time2 - time1 - controlTime ],
+            [ "Cached outside loop", time4 - time3 - controlTime ]
+        ]);
     }
 
     /// Tests to see if it's faster to:
@@ -930,10 +972,86 @@ class PerformanceTests
         local controlTime2 = hardware.micros();
         local controlTime = controlTime2 - controlTime1;
 
-        return _printResults( "Regexp vs String find Comparison (x100,000)",
+        return _printResults( "Single vs Multiple closure Comparison (x100,000)",
         [
             [ "Single closure", time2 - time1 ],
             [ "Multiple closures", time4 - time3 - controlTime ]
+        ]);
+    }
+
+    /// Tests to see if it's faster to:
+    /// A. Jump to an Else statement
+    /// B. Jump outside of an If statement
+    function ifVsifElseComparison()
+    {
+        local time1 = hardware.micros();
+        for( local i = 0; i < 1000000; ++i )
+        {
+            if( false ) {}
+            else
+            {
+                continue;
+            }
+        }
+        local time2 = hardware.micros();
+
+        local time3 = hardware.micros();
+        for( local i = 0; i < 1000000; ++i )
+        {
+            if( false ) {}
+            
+            continue;
+        }
+        local time4 = hardware.micros();
+
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 1000000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
+        return _printResults( "If vs If Else Comparison (x1,000,000)",
+        [
+            [ "Jump to an Else statement", time2 - time1 - controlTime ],
+            [ "Jump outside of an If statement", time4 - time3 - controlTime ]
+        ]);
+    }
+
+    /// Tests to see if it's faster to:
+    /// A. Retrieve a parameter then make a function call
+    /// B. Make a function call retrieving the parameters inside the call
+    function cachedParametersComparison()
+    {
+        local value1 = 10;
+        local value2 = 20;
+
+        local testFunction = function( param ) {};
+
+        local time1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            local value3 = value1;
+            local value4 = value2;
+
+            testFunction( value4 + value3 );     
+        }
+        local time2 = hardware.micros();
+
+        local time3 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            testFunction( value1 + value2 );   
+        }
+        local time4 = hardware.micros();
+
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
+        return _printResults( "Cached Parameters Comparison (x100,000)",
+        [
+            [ "Retrieve a parameter then make a function call", time2 - time1 - controlTime ],
+            [ "Make a function call retrieving the parameters inside the call", time4 - time3 - controlTime ]
         ]);
     }
 
