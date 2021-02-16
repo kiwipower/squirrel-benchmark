@@ -1,3 +1,4 @@
+local localGlobaltestValue = true;
 
 class PerformanceTests
 {
@@ -7,6 +8,7 @@ class PerformanceTests
         output1  = "Running Performance Tests\n";
         output1 += "=========================\n";
         
+        output1 += rootLookupVsClosureCaptureComparison(); collectgarbage();
         output1 += localsInsideVsOutsideLoopComparison(); collectgarbage();
         output1 += nullVsImpliedComparison(); collectgarbage();
         output1 += newSlotVsSet(); collectgarbage();
@@ -32,6 +34,69 @@ class PerformanceTests
         server.log( output2 );
         server.log( output3 );
         server.log( output4 );
+    }
+
+    /// Tests to see if it's faster to:
+    /// A. Access a variable from root
+    /// B. Access a variable from root directly
+    /// C. Access a variable from root as a local
+    /// D. Capture the root variable in a closure
+    function rootLookupVsClosureCaptureComparison()
+    {
+        getroottable().testValue <- true;
+
+        local time1 = hardware.micros();
+        for( local i = 0; i < 1000000; ++i )
+        {
+            testValue;
+        }
+        local time2 = hardware.micros();
+
+        local time3 = hardware.micros();
+        for( local i = 0; i < 1000000; ++i )
+        {
+            ::testValue;
+        }
+        local time4 = hardware.micros();
+
+        local time5 = hardware.micros();
+        for( local i = 0; i < 1000000; ++i )
+        {
+            localGlobaltestValue;
+        }
+        local time6 = hardware.micros();
+
+        local closureCapture = function()
+        {
+            local localTestValue = testValue;
+            return function()
+            {
+                local time7 = hardware.micros();
+                for( local i = 0; i < 1000000; ++i )
+                {
+                    localGlobaltestValue;
+                }
+                local time8 = hardware.micros();
+
+                return [time7, time8];
+            }
+        }
+
+        local testClosure = closureCapture();
+        local time78 = testClosure();
+
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 1000000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
+        return _printResults( "Access a variable from root vs Capture the root variable in a closure (x1,000,000)",
+        [
+            [ "Access a variable from root", time2 - time1 - controlTime ],
+            [ "Access a variable from root directly", time4 - time3 - controlTime ],
+            [ "Access a variable from root as a local", time6 - time5 - controlTime ],
+            [ "Capture the root variable in a closure", time78[1] - time78[0] - controlTime ]
+        ]);
     }
 
     /// Tests to see if it's faster to:
