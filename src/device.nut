@@ -7,7 +7,7 @@ class PerformanceTests
         local output1 = "", output2 = "", output3 = "", output4 = "";
         output1  = "Running Performance Tests\n";
         output1 += "=========================\n";
-        
+        output1 += arrayPushPopVsIndexComparison(); collectgarbage();
         output1 += rootLookupVsClosureCaptureComparison(); collectgarbage();
         output1 += localsInsideVsOutsideLoopComparison(); collectgarbage();
         output1 += nullVsImpliedComparison(); collectgarbage();
@@ -34,6 +34,149 @@ class PerformanceTests
         server.log( output2 );
         server.log( output3 );
         server.log( output4 );
+    }
+
+    /// Tests to see if it's faster to:
+    /// A. Access an array via push and pop
+    /// B. Access an array via index
+    function arrayPushPopVsIndexComparison()
+    {
+        local testArray = array(0);
+
+        local time1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            testArray.push( null );
+            testArray.push( null );
+            testArray.push( null );
+            testArray.push( null );
+            testArray.push( null );
+            testArray.push( null );
+            testArray.push( null );
+            testArray.push( null );
+            testArray.push( null );
+            testArray.push( null );
+            testArray.pop();
+            testArray.pop();
+            testArray.pop();
+            testArray.pop();
+            testArray.pop();
+            testArray.pop();
+            testArray.pop();
+            testArray.pop();
+            testArray.pop();
+            testArray.pop();
+        }
+        local time2 = hardware.micros();
+
+        local time3 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            testArray.push( null );
+            testArray.push( null );
+            testArray.push( null );
+            testArray.push( null );
+            testArray.push( null );
+            testArray.push( null );
+            testArray.push( null );
+            testArray.push( null );
+            testArray.push( null );
+            testArray.push( null );
+            testArray.pop();
+            testArray.pop();
+            testArray.pop();
+            testArray.pop();
+            testArray.pop();
+            testArray.pop();
+            testArray.pop();
+            testArray.pop();
+            testArray.pop();
+            testArray.pop();
+        }
+        local time4 = hardware.micros();
+
+        local testArray2 = array( 10 );
+        local testIndex = 0;
+
+        local time5 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            testArray2[testIndex++] = null;
+            testArray2[testIndex++] = null;
+            testArray2[testIndex++] = null;
+            testArray2[testIndex++] = null;
+            testArray2[testIndex++] = null;
+            testArray2[testIndex++] = null;
+            testArray2[testIndex++] = null;
+            testArray2[testIndex++] = null;
+            testArray2[testIndex++] = null;
+            testArray2[testIndex++] = null;
+            testArray2[--testIndex]; testArray2[testIndex] = null;
+            testArray2[--testIndex]; testArray2[testIndex] = null;
+            testArray2[--testIndex]; testArray2[testIndex] = null;
+            testArray2[--testIndex]; testArray2[testIndex] = null;
+            testArray2[--testIndex]; testArray2[testIndex] = null;
+            testArray2[--testIndex]; testArray2[testIndex] = null;
+            testArray2[--testIndex]; testArray2[testIndex] = null;
+            testArray2[--testIndex]; testArray2[testIndex] = null;
+            testArray2[--testIndex]; testArray2[testIndex] = null;
+            testArray2[--testIndex]; testArray2[testIndex] = null;
+        }
+        local time6 = hardware.micros();
+
+        local testArray3 = array( 5 );
+        local testIndex2 = 0;
+
+        @macro push( value )
+        testArray3[testIndex2++] = @{value};
+        local len = testArray3.len();
+        if( len <= testIndex2 ) { testArray3.resize(len*2); }
+        @end
+
+        @macro pop()
+        testArray3[--testIndex2]; testArray3[testIndex2] = null;
+        local len = testArray3.len();
+        if( testIndex2 < len/2 ) { testArray3.resize(len/2); }
+        @end
+
+        local time7 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            @{push( null )};
+            @{push( null )};
+            @{push( null )};
+            @{push( null )};
+            @{push( null )};
+            @{push( null )};
+            @{push( null )};
+            @{push( null )};
+            @{push( null )};
+            @{push( null )};
+            @{pop()};
+            @{pop()};
+            @{pop()};
+            @{pop()};
+            @{pop()};
+            @{pop()};
+            @{pop()};
+            @{pop()};
+            @{pop()};
+            @{pop()};
+        }
+        local time8 = hardware.micros();
+
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
+        return _printResults( "Access an array via push and pop vs Access an array via index (x100,000)",
+        [
+            [ "Access an array via push and pop", time2 - time1 - controlTime ],
+            [ "Access an array via push and pop a second time", time4 - time3 - controlTime ],
+            [ "Access an array via index", time6 - time5 - controlTime ],
+            [ "Access an array via index with bounds checking", time8 - time7 - controlTime ]
+        ]);
     }
 
     /// Tests to see if it's faster to:
