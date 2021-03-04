@@ -29,6 +29,7 @@ class PerformanceTests
         output3 += singleVsMultipleClosures(); collectgarbage();
         output3 += ifVsifElseComparison(); collectgarbage();
         output4 += cachedParametersComparison(); collectgarbage();
+        output4 += functionCallComparison(); collectgarbage();
 
         server.log( output1 );
         server.log( output2 );
@@ -1263,6 +1264,84 @@ class PerformanceTests
         ]);
     }
 
+    /// Tests to see if it's faster to:
+    /// A. Perform a call with no parameters
+    /// B. Perform a call with 5 parameters
+    /// C. Perform an acall with no parameters
+    /// D. Perform an acall with 5 parameters
+    /// E. Perform an acall with a new array each time with no parameters
+    /// E. Perform an acall with a new array each time with 5 parameters
+    function functionCallComparison()
+    {
+        local value1 = 10;
+        local value2 = 20;
+
+        local testFunction  = function() {};
+        local testFunction2 = function(a,b,c,d,e) {};
+
+        local time1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            testFunction();     
+        }
+        local time2 = hardware.micros();
+
+        local time3 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            testFunction2( 1, 2, 3, 4, 5 );     
+        }
+        local time4 = hardware.micros();
+
+        local parameters = [this];
+
+        local time5 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            testFunction.acall( parameters );
+        }
+        local time6 = hardware.micros();
+
+        parameters = [this, 1, 2, 3, 4, 5];
+
+        local time7 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            testFunction2.acall( parameters );
+        }
+        local time8 = hardware.micros();
+
+        local time9 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            local parameters2 = [this];
+            testFunction.acall( parameters2 );
+        }
+        local time10 = hardware.micros();
+
+        local time11 = hardware.micros();
+        for( local i = 0; i < 100000; ++i )
+        {
+            local parameters2 = [this, 1, 2, 3, 4, 5];
+            testFunction2.acall( parameters2 );
+        }
+        local time12 = hardware.micros();
+
+        local controlTime1 = hardware.micros();
+        for( local i = 0; i < 100000; ++i ) {}
+        local controlTime2 = hardware.micros();
+        local controlTime = controlTime2 - controlTime1;
+
+        return _printResults( "Function Call Comparison (x100,000)",
+        [
+            [ "Perform a call with no parameters", time2 - time1 - controlTime ],
+            [ "Perform a call with 5 parameters", time4 - time3 - controlTime ],
+            [ "Perform an acall with no parameters", time6 - time5 - controlTime ],
+            [ "Perform an acall with 5 parameters", time8 - time7 - controlTime ],
+            [ "Perform an acall with a new array each time with no parameters", time10 - time9 - controlTime ],
+            [ "Perform an acall with a new array each time with 5 parameters", time12 - time1 - controlTime ]
+        ]);
+    }
 /*
     /// Tests to see if it's faster to:
     /// A. Lookup an interface as a string from shared a global class.
